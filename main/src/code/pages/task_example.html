@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Instructions</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .content {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .images {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .next-button {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <p>{{ instructions_text }}</p>
+    </div>
+    <div class="images">
+        <img src="{{ example_image1_path }}" alt="Example 1">
+        <img src="{{ example_image2_path }}" alt="Example 2">
+    </div>
+    <div class="next-button">
+        <button onclick="next()">Next</button>
+    </div>
+    <script>
+        function next() {
+            window.location.href = "/next";
+        }
+    </script>
+</body>
+</html>
