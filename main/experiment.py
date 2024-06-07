@@ -51,6 +51,16 @@ class Exp(psynet.experiment.Experiment):
             time_estimate=10,
         )
 
+    def number_input_page(self):
+        number_control = NumberControl(width='120px', text_align='right')
+        page = ModularPage(
+            "number_input_page",
+            Prompt("Please enter a number:"),
+            number_control,
+            time_estimate=5
+        )
+        return page
+
     def slider_page(self):
         return ModularPage(
             "slider_task",
@@ -105,14 +115,26 @@ class Exp(psynet.experiment.Experiment):
                         lambda participant: Exp().image_page(participant.var.images[participant.var.current_index]),
                         time_estimate=10,
                     ),
-                    PageMaker(
-                        lambda participant: Exp().slider_page(),
+                    ModularPage(
+                        "number_input_page",
+                        Prompt("Please enter a number:"),
+                        NumberControl(width='120px', text_align='right'),
                         time_estimate=5,
                     ),
-                    CodeBlock(lambda participant: participant.var.set("current_index", participant.var.current_index + 1)),
+                    CodeBlock(
+                        lambda participant: participant.var.set("current_index", participant.var.current_index + 1)),
                 ),
+
                 expected_repetitions=10,
             ),
+        ),
+
+        InfoPage(
+            tags.div(
+                tags.h2("End of Experiment"),
+                tags.p("You may close the screen."),
+            ),
+            time_estimate=5,
         ),
         SuccessfulEndPage(),
     )
