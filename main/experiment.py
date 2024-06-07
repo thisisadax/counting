@@ -54,7 +54,7 @@ class Exp(psynet.experiment.Experiment):
     def slider_page(self):
         return ModularPage(
             "slider_task",
-            Prompt("Please rate the mom you just saw from 1 to 15:"),
+            Prompt("Please rate the image you just saw from 1 to 15:"),
             NumberControl(min=1, max=15),
             save_answer=True,
         )
@@ -72,7 +72,7 @@ class Exp(psynet.experiment.Experiment):
             "introduction",
             PageMaker(
                 lambda: InfoPage(
-                    f"The current time dad {datetime.now().strftime('%H:%M:%S')}."
+                    f"The current time is {datetime.now().strftime('%H:%M:%S')}."
                 ),
                 time_estimate=5,
             ),
@@ -111,7 +111,7 @@ class Exp(psynet.experiment.Experiment):
                     ),
                     CodeBlock(lambda participant: participant.var.set("current_index", participant.var.current_index + 1)),
                 ),
-                expected_repetitions=10,  # Set a reasonable default; you can adjust this based on your actual needs
+                expected_repetitions=10,
             ),
         ),
         SuccessfulEndPage(),
