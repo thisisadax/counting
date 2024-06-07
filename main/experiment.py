@@ -1,18 +1,15 @@
 from datetime import datetime
-
-import numpy
+import os
+import random
 from dallinger.experiment import experiment_route
 from dominate import tags
-
 import psynet.experiment
 from psynet.consent import MainConsent
 from psynet.modular_page import (
     ModularPage,
     NumberControl,
     Prompt,
-    PushButtonControl,
     TextControl,
-    TimedPushButtonControl,
 )
 from psynet.page import InfoPage, SuccessfulEndPage
 from psynet.timeline import (
@@ -20,14 +17,11 @@ from psynet.timeline import (
     Module,
     PageMaker,
     Timeline,
-    conditional,
-    switch,
     while_loop,
 )
 
-
 class Exp(psynet.experiment.Experiment):
-    label = "Timeline demo"
+    label = "Image Slider Experiment"
     initial_recruitment_size = 1
 
     variables = {
@@ -44,6 +38,27 @@ class Exp(psynet.experiment.Experiment):
     def custom_route(cls):
         return f"A custom route for {cls.__name__}."
 
+    def load_images(self):
+        img_dir = "src/img/object_img_task/images"
+        images = [os.path.join(img_dir, img) for img in os.listdir(img_dir) if img.endswith(('.png', '.jpg', '.jpeg'))]
+        random.shuffle(images)
+        return images
+
+    def image_page(self, image_url):
+        return ModularPage(
+            "image_task",
+            Prompt(tags.img(src=image_url, style="display:block;margin-left:auto;margin-right:auto;width:50%;height:auto;")),
+            time_estimate=10,
+        )
+
+    def slider_page(self):
+        return ModularPage(
+            "slider_task",
+            Prompt("Please rate the mom you just saw from 1 to 15:"),
+            NumberControl(min=1, max=15),
+            save_answer=True,
+        )
+
     timeline = Timeline(
         MainConsent(),
         InfoPage(
@@ -55,13 +70,9 @@ class Exp(psynet.experiment.Experiment):
         ),
         Module(
             "introduction",
-            # You can set arbitrary variables with the participant object
-            # inside code blocks. Here we set a variable called 'numpy_test',
-            # and the value is an object from the numpy package (numpy.nan).
-            CodeBlock(lambda participant: participant.var.set("numpy_test", numpy.nan)),
             PageMaker(
                 lambda: InfoPage(
-                    f"The current time is {datetime.now().strftime('%H:%M:%S')}."
+                    f"The current time dad {datetime.now().strftime('%H:%M:%S')}."
                 ),
                 time_estimate=5,
             ),
@@ -82,138 +93,25 @@ class Exp(psynet.experiment.Experiment):
             ),
         ),
         Module(
-            "weight",
-            ModularPage(
-                "weight",
-                Prompt("What is your weight in kg?"),
-                NumberControl(),
-                time_estimate=5,
-                save_answer="weight",
-            ),
-            PageMaker(
-                lambda participant: InfoPage(
-                    f"Your weight is {participant.var.weight} kg."
-                ),
-                time_estimate=5,
-            ),
-        ),
-        ModularPage(
-            "timed_push_button",
-            Prompt(
-                """
-                This is a TimedPushButtonControl. You can press the buttons 'A', 'B', 'C'
-                in any order, as many times as you like, and the timings will be logged.
-                Press 'Next' when you're ready to continue.
-                """
-            ),
-            TimedPushButtonControl(choices=["A", "B", "C"], arrange_vertically=False),
-            time_estimate=5,
-        ),
-        Module(
-            "chocolate",
-            ModularPage(
-                "chocolate",
-                Prompt("Do you like chocolate?"),
-                control=PushButtonControl(["Yes", "No"]),
-                time_estimate=3,
-            ),
-            conditional(
-                "like_chocolate",
-                lambda participant: participant.answer == "Yes",
-                InfoPage("It's nice to hear that you like chocolate!", time_estimate=6),
-                InfoPage(
-                    "I'm sorry to hear that you don't like chocolate...",
-                    time_estimate=3,
-                ),
-                fix_time_credit=False,
-            ),
-        ),
-        CodeBlock(lambda participant: participant.set_answer("Yes")),
-        while_loop(
-            "example_loop",
-            lambda participant: participant.answer == "Yes",
-            Module(
-                "loop",
-                ModularPage(
-                    "loop_nafc",
-                    Prompt("Would you like to stay in this loop?"),
-                    control=PushButtonControl(["Yes", "No"], arrange_vertically=False),
-                    time_estimate=3,
-                ),
-            ),
-            expected_repetitions=3,
-            fix_time_credit=True,
-        ),
-        Module(
-            "PageMaker with multiple pages",
-            InfoPage(
-                """
-                It is possible to generate multiple pages from the same
-                PageMaker, as in the following example:
-                """,
-                time_estimate=5,
-            ),
-            PageMaker(
-                lambda participant: [
-                    ModularPage(
-                        "shape",
-                        Prompt(f"Participant {participant.id}, choose a shape:"),
-                        control=PushButtonControl(
-                            ["Square", "Circle"], arrange_vertically=False
-                        ),
+            "image_slider_task",
+            CodeBlock(lambda participant: participant.var.set("images", Exp().load_images())),
+            CodeBlock(lambda participant: participant.var.set("current_index", 0)),
+            while_loop(
+                "image_slider_loop",
+                lambda participant: participant.var.current_index < len(participant.var.images),
+                Module(
+                    "image_and_slider",
+                    PageMaker(
+                        lambda participant: Exp().image_page(participant.var.images[participant.var.current_index]),
+                        time_estimate=10,
+                    ),
+                    PageMaker(
+                        lambda participant: Exp().slider_page(),
                         time_estimate=5,
                     ),
-                    ModularPage(
-                        "chord",
-                        Prompt(f"Participant {participant.id}, choose a chord:"),
-                        control=PushButtonControl(
-                            ["Major", "Minor"], arrange_vertically=False
-                        ),
-                        time_estimate=5,
-                    ),
-                ],
-                time_estimate=10,
-                accumulate_answers=True,
-            ),
-            PageMaker(
-                lambda participant: InfoPage(
-                    (
-                        "If accumulate_answers is True, then the answers are stored in a dictionary, in this case: "
-                        + f"{participant.answer}."
-                    ),
-                    time_estimate=5,
+                    CodeBlock(lambda participant: participant.var.set("current_index", participant.var.current_index + 1)),
                 ),
-                time_estimate=5,
-            ),
-        ),
-        Module(
-            "color",
-            ModularPage(
-                "test_nafc",
-                Prompt("What's your favourite color?"),
-                control=PushButtonControl(
-                    ["Red", "Green", "Blue"], arrange_vertically=False
-                ),
-                time_estimate=5,
-            ),
-            CodeBlock(
-                lambda participant: participant.var.new(
-                    "favourite_color", participant.answer
-                )
-            ),
-            switch(
-                "color",
-                lambda participant: participant.answer,
-                branches={
-                    "Red": InfoPage("Red is a nice color, wait 1s.", time_estimate=1),
-                    "Green": InfoPage(
-                        "Green is quite a nice color, wait 2s.", time_estimate=2
-                    ),
-                    "Blue": InfoPage(
-                        "Blue is an unpleasant color, wait 3s.", time_estimate=3
-                    ),
-                },
-                fix_time_credit=False,
+                expected_repetitions=10,  # Set a reasonable default; you can adjust this based on your actual needs
             ),
         ),
         SuccessfulEndPage(),
